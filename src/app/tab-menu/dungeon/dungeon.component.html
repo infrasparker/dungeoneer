@@ -1,0 +1,18 @@
+<div fxLayout="column">
+  <div fxFlex="50%">
+    <mat-card></mat-card>
+  </div>
+  <div fxFlex="50%">
+    <div fxLayout="column" fxLayoutGap="5px">
+        <div fxLayout="row" fxFlex="50%" fxLayoutGap="5px">
+          <app-ability fxFlex="50%" [ability]="adv.abilities[0]"></app-ability>
+          <app-ability fxFlex="50%" [ability]="adv.abilities[1]"></app-ability>
+        </div>
+      
+        <div fxLayout="row" fxFlex="50%" fxLayoutGap="5px">
+          <app-ability fxFlex="50%" [ability]="adv.abilities[2]"></app-ability>
+          <app-ability fxFlex="50%" [ability]="adv.abilities[3]"></app-ability>
+        </div>
+      </div>
+  </div>
+</div>

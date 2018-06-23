@@ -1,0 +1,6 @@
+<div fxLayout="row">
+  <app-adventurer-list fxFlex="20%" [party]="party" (advSelected)="changeSelected($event)"></app-adventurer-list>
+  <mat-card *ngIf="selected" fxFlex="80%">
+    <app-adventurer-info [adventurer]="selected"></app-adventurer-info>
+  </mat-card>
+</div>

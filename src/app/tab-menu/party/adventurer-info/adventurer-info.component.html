@@ -1,0 +1,132 @@
+<div id="container" fxLayout="row">
+  <!-- First Column -->
+  <div fxFlex="50%" fxLayout="column" class="column">
+    <!-- Name -->
+    <div id="name" fxFlex="12%">
+      <!-- Main name display -->
+      <h1 *ngIf="!edit">
+        {{ adventurer.name }}
+      </h1>
+      <!-- Name input -->
+      <mat-form-field *ngIf="edit" id="name">
+        <input matInput placeholder="Adventurer Name" [(ngModel)]="adventurer.name">
+      </mat-form-field>
+      <button id="edit-button" (click)="onEditClick()" mat-raised-button color="primary">
+        <mat-icon>edit</mat-icon>
+      </button>
+    </div>
+    <mat-divider class="divider"></mat-divider>
+    <!-- Race and Background -->
+    <div fxFlex="8%">
+      Race and Background
+    </div>
+    <!-- Skills -->
+    <div fxFlex="40%">
+      Skills
+    </div>
+    <!-- Quirks -->
+    <div fxFlex="40%">
+      Quirks
+    </div>
+    <!-- ADVENTURER NAME -->
+    <!-- <div fxLayout="row" fxFlex="10%">
+      <h1 *ngIf="!edit">
+        {{ adventurer.name }}
+      </h1>
+      <button id="edit-button" (click)="onEditClick()" mat-raised-button color="primary">
+        <mat-icon>edit</mat-icon>
+      </button>
+      <mat-form-field *ngIf="edit" id="name">
+        <input matInput placeholder="Adventurer Name" [(ngModel)]="adventurer.name">
+      </mat-form-field>
+    </div>
+    <mat-divider></mat-divider> -->
+
+    <!-- Race and Background -->
+    <!-- <h4 fxFlex="10%"> {{ adventurer.name }} </h4> -->
+  </div>
+
+  <mat-divider fxFlex="0%" [vertical]="true" [inset]="true"></mat-divider>
+
+  <!-- Second Column -->
+  <div fxFlex="50%" fxLayout="column">
+
+  </div>
+</div>
+
+
+<!-- CLASS NAME
+<h2 id="class-name" matTooltip="{{ adventurer.classDescription }}"><b>{{ adventurer.className }}</b></h2>
+EXP BAR
+<label id="exp" class="label-size">{{ adventurer.exp }} / {{ adventurer.nextExp }}</label>
+<mat-progress-bar
+    mode="determinate"
+    value="{{ adventurer.exp === 0 ? 0 : (adventurer.exp * 100 / adventurer.nextExp) }}">
+</mat-progress-bar>
+<div class="block-end">
+  <label class="label-size">Level {{ adventurer.level }}</label>
+  <label id="nextLvl" class="label-size">Level {{ adventurer.level + 1}}</label>
+</div>
+Stat Scores
+<div id="stat-block" class="block-end" fxLayout="row">
+  <div fxFlex="20%">
+    <h4 class="stat-info"><b>STR</b></h4>
+    <p class="stat-info">{{ adventurer.strength }}</p>
+    <div class="center-icon">
+      <mat-icon *ngIf="adventurer.strengthSave" class="stat-save">lens</mat-icon>
+      <mat-icon *ngIf="!adventurer.strengthSave" class="stat-save">panorama_fish_eye</mat-icon>
+    </div>
+  </div>
+  <div fxFlex="20%">
+    <h4 class="stat-info"><b>DEX</b></h4>
+    <p class="stat-info">{{ adventurer.dexterity }}</p>
+    <div class="center-icon">
+        <mat-icon *ngIf="adventurer.dexteritySave" class="stat-save">lens</mat-icon>
+        <mat-icon material-icons--outline *ngIf="!adventurer.dexteritySave" class="stat-save">panorama_fish_eye</mat-icon>
+      </div>
+  </div>
+  <div fxFlex="20%">
+    <h4 class="stat-info"><b>CON</b></h4>
+    <p class="stat-info">{{ adventurer.constitution }}</p>
+    <div class="center-icon">
+        <mat-icon *ngIf="adventurer.constitutionSave" class="stat-save">lens</mat-icon>
+        <mat-icon *ngIf="!adventurer.constitutionSave" class="stat-save">panorama_fish_eye</mat-icon>
+      </div>
+  </div>
+  <div fxFlex="20%">
+    <h4 class="stat-info"><b>INT</b></h4>
+    <p class="stat-info">{{ adventurer.intelligence }}</p>
+    <div class="center-icon">
+        <mat-icon *ngIf="adventurer.intelligenceSave" class="stat-save">lens</mat-icon>
+        <mat-icon *ngIf="!adventurer.intelligenceSave" class="stat-save">panorama_fish_eye</mat-icon>
+      </div>
+  </div>
+  <div fxFlex="20%">
+    <h4 class="stat-info"><b>WIS</b></h4>
+    <p class="stat-info">{{ adventurer.wisdom }}</p>
+    <div class="center-icon">
+        <mat-icon *ngIf="adventurer.wisdomSave" class="stat-save">lens</mat-icon>
+        <mat-icon *ngIf="!adventurer.wisdomSave" class="stat-save">panorama_fish_eye</mat-icon>
+      </div>
+  </div>
+  <div fxFlex="20%">
+    <h4 class="stat-info"><b>CHA</b></h4>
+    <p class="stat-info">{{ adventurer.charisma }}</p>
+    <div class="center-icon">
+        <mat-icon *ngIf="adventurer.charismaSave" class="stat-save">lens</mat-icon>
+        <mat-icon *ngIf="!adventurer.charismaSave" class="stat-save">panorama_fish_eye</mat-icon>
+      </div>
+  </div>
+</div>
+Abilities
+<div fxLayout="column" fxLayoutGap="5px">
+  <div fxLayout="row" fxFlex="50%" fxLayoutGap="5px">
+    <app-ability fxFlex="50%" [ability]="adventurer.abilities[0]"></app-ability>
+    <app-ability fxFlex="50%" [ability]="adventurer.abilities[1]"></app-ability>
+  </div>
+
+  <div fxLayout="row" fxFlex="50%" fxLayoutGap="5px">
+    <app-ability fxFlex="50%" [ability]="adventurer.abilities[2]"></app-ability>
+    <app-ability fxFlex="50%" [ability]="adventurer.abilities[3]"></app-ability>
+  </div>
+</div> -->

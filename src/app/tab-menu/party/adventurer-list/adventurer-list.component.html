@@ -1,0 +1,5 @@
+<mat-button-toggle-group vertical>
+  <mat-button-toggle *ngFor="let member of party" (click)="onClick(member)">
+    {{ member.name }}
+  </mat-button-toggle>
+</mat-button-toggle-group>
