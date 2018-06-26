@@ -2,29 +2,32 @@ import { Stats } from "./stats.model";
 import { Ability } from "./ability.model";
 import { DamageResistance } from "../mechanics/damage.model";
 import { ConditionResistance } from "../mechanics/condition.model";
-import { Armor } from "../mechanics/armor.model";
+import { Armor } from "../item/armor.model";
 import { DiceRoll } from "../mechanics/roll.model";
-import { Effect } from "../mechanics/effect.model";
+import { BonusContainer } from "./bonus.model";
 
-export abstract class Creature {
+export abstract class Creature extends Stats {
+    // Information about the creature
     public name: string; // Name of creature
+    public race: string; // Race of creature
+    public background: string; // Creature background
 
-    public armor: Armor; // Armor
-    public acBonus: number;
+    // Hit points and hit dice
+    public hp: number; // Current hit points
+    public hp_max: number; // Maximum hit points
+    public hp_temp: number; // Temporary hit points
+    public hitDice: DiceRoll; // Hit dice used to calculate max hit points
 
-    public attackBonus: number;
+    // Armor class and armor
+    public ac_natural: number // Natural armor
+    public armor: Armor; // Armor, if wearing armor; undefined if not. May be broken down later?
 
-    public tempHP: number;
-    public hitDice: DiceRoll;
-
-    public strengthSave:        boolean;
-    public dexteritySave:       boolean;
-    public constitutionSave:    boolean;
-    public intelligenceSave:    boolean;
-    public wisdomSave:          boolean;
-    public charismaSave:        boolean;
-
+    // Proficiency
     public proficiencyBonus: number;
+    public proficiencies: string[];
+
+    // Saving throws
+    public saves: [boolean, boolean, boolean, boolean, boolean, boolean]; // Saving throw array
 
     public abilities: [Ability, Ability, Ability, Ability]; // Can have up to 4 abilities
 
@@ -32,7 +35,7 @@ export abstract class Creature {
     
     public conditionResistances: ConditionResistance; // A JS object that contains condition type name keys mapped to resistance values from 0.0 to 1.0
 
-    public effects: Effect[];
+    public bonuses: BonusContainer;
 
     constructor(
         name: string,
@@ -42,92 +45,45 @@ export abstract class Creature {
         this.name = name;
         this.generateHitDice();
         this.generateHP();
-        this.generateSavingThrows();
         this.generateArmor();
+        this.generateProficiency();
+        this.generateSavingThrows();
         this.generateAbilities();
         this.generateDamageResistances();
         this.generateConditionResistances();
+        this.bonuses = new BonusContainer();
     }
+
+
+
+    // ====================================================================
+    // Object initialization and generation methods
+    // ====================================================================
 
     /**
-     * Determines whether or not the creature would be hit by an incoming attack roll,
-     * and generates flavor text depending on the result. Can be overridden for additional
-     * functionality.
-     * @param roll The value of the attack roll the creature is defending against.
-     * @returns A tuple containing a boolean representing whether or not the creature was hit, and the flavor text.
+     * Generates creature hit dice. Varies based on what creature it is used to construct.
      */
-    public defendFromAttackRoll(roll: number): [boolean, string] {
-        let dodgeCap: number = 10 + this.acDexBonus();
-        if (roll < 8)
-            return [false, "The attack missed."];
-        else if (roll < dodgeCap)
-            return [false, this.name + "dodged the attack."];
-        else if (roll < this.ac() + this.acBonus)
-            return [false, this.name + "blocked the attack."];
-        else
-            return [true, "The attack landed."];
-    }
-
-    public takeDamage(damages: [string, number][]): string {
-        let text: string = "";
-        damages.forEach(pair => {
-            let totalDamage: number = pair[1] - pair[1] * this.damageResistances[pair[0]];
-            if (totalDamage < 0) {
-                text += this.name + " heals for " + totalDamage + " hit points.";
-                this.changeHP(-totalDamage);
-            }
-            else {
-                text += this.name + " takes " + totalDamage + " points of " + pair[0] + " damage.";
-                if (totalDamage > this.tempHP) {
-                    totalDamage -= this.tempHP;
-                    this.tempHP = 0;
-                    this.changeHP(-totalDamage);
-                } else {
-                    totalDamage = 0;
-                    this.tempHP -= totalDamage;
-                }
-            }
-        });
-        return text;
-    }
-
-    protected changeHP(change: number): void {
-        this.hp = Math.min(this.hp + change, this.maxHP);
-    }
-
-    /**
-     * Calculates the bonus to AC from dexterity, considering armor.
-     * @returns The AC bonus.
-     */
-    public acDexBonus(): number {
-        return (this.armor.maxDex === -1) ? this.dexterity : Math.min(this.armor.maxDex, this.dexterity);
-    }
-
-    /**
-     * The creature's AC. Can be overridden for additional functionality.
-     */
-    public ac(): number {
-        return this.armor.ac + this.acDexBonus();
-    }
-
-    public startTurn(): void {
-        this.effects.forEach(effect => {
-            effect.update(this);
-        });
-    }
-
-    public abstract endTurn(): void;
-
-    protected generateHP(): void {
-        this.maxHP = this.hitDice.roll() + this.hitDice.amount * this.constitution;
-        this.hp = this.maxHP;
-    }
-
     protected abstract generateHitDice(): void;
 
-    protected abstract generateSavingThrows(): void;
+    /**
+     * Generates hit points and hit point maximum using hit dice rolls and constitution modifier.
+     */
+    protected generateHP(): void {
+        this.hp_max = this.hitDice.roll() + this.hitDice.amount * this.constitution();
+        this.hp = this.hp_max;
+    }
 
+    /**
+     * Generates armor and armor class values depending on the creature, not including shields.
+     */
     protected abstract generateArmor(): void;
+
+    protected abstract generateProficiency(): void;
+
+    /**
+     * Generates saving throw array.
+     */
+    protected abstract generateSavingThrows(): void;
 
     /**
      * Generates list of abilities that the creature can use, implemented by class
@@ -148,7 +104,142 @@ export abstract class Creature {
     // Property retrieving methods
     // ===============================================================
 
-    public maxHP(): number {
+    /**
+     * Getter for calculated strength mod. Should be overriden.
+     * @returns total strength mod
+     */
+    public strength(): number {
+        return this.baseStrength();
+    }
 
+    /**
+     * Getter for calculated dexterity mod. Should be overriden.
+     * @returns total dexterity mod
+     */
+    public dexterity(): number {
+        return this.baseDexterity();
+    }
+
+    /**
+     * Getter for calculated constitution mod. Should be overriden.
+     * @returns total constitution mod
+     */
+    public constitution(): number {
+        return this.baseConstitution();
+    }
+
+    /**
+     * Getter for calculated intelligence mod. Should be overriden.
+     * @returns total intelligence mod
+     */
+    public intelligence(): number {
+        return this.baseIntelligence();
+    }
+
+    /**
+     * Getter for calculated wisdom mod. Should be overriden.
+     * @returns total wisdom mod
+     */
+    public wisdom(): number {
+        return this.baseWisdom();
+    }
+
+    /**
+     * Getter for calculated charisma mod. Should be overriden.
+     * @returns total charisma mod
+     */
+    public charisma(): number {
+        return this.baseCharisma();
+    }
+
+    // ===================================================================================
+
+    /**
+     * Retrieves maximum hit points including any current bonuses.
+     * @returns max hit points
+     */
+    public maxHP(): number {
+        return this.hp_max + this.bonuses.bonus("hp_max");
+    }
+
+    /**
+     * Calculates the bonus to AC from dexterity, considering armor.
+     * @returns The AC bonus.
+     */
+    public ac_dexBonus(): number {
+        return (this.armor.maxDex === -1) ? this.dexterity() : Math.min(this.armor.maxDex, this.dexterity());
+    }
+
+    /**
+     * Retrieves the AC value from only the creature's dexterity mod.
+     * Used to choose between blocking, dodging, or missing flavor text.
+     * @returns dodge AC
+     */
+    public dexAC(): number {
+        return 10 + this.ac_dexBonus();
+    }
+
+    /**
+     * Retrieves the blocking AC, which is also the full AC.
+     * @returns AC
+     */
+    public blockAC(): number {
+        return Math.max(this.ac_natural + this.dexterity(), this.armor.ac + this.ac_dexBonus()) + this.bonuses.bonus("ac");
+    }
+
+    // =================================================================================
+
+    /**
+     * Retrieves strength saving throw bonus.
+     * @returns strength save
+     */
+    public strengthSave(): number {
+        return this.strength() + (this.saves[0] ? this.proficiencyBonus : 0) + this.bonuses.bonus("strengthSave");
+    }
+
+    /**
+     * Retrieves dexterity saving throw bonus.
+     * @returns dexterity save
+     */
+    public dexteritySave(): number {
+        return this.dexterity() + (this.saves[1] ? this.proficiencyBonus : 0) + this.bonuses.bonus("dexteritySave");
+    }
+
+    /**
+     * Retrieves constitution saving throw bonus.
+     * @returns constitution save
+     */
+    public constitutionSave(): number {
+        return this.constitution() + (this.saves[2] ? this.proficiencyBonus : 0) + this.bonuses.bonus("constitutionSave");
+    }
+
+    /**
+     * Retrieves intelligence saving throw bonus.
+     * @returns intelligence save
+     */
+    public intelligenceSave(): number {
+        return this.intelligence() + (this.saves[3] ? this.proficiencyBonus : 0) + this.bonuses.bonus("intelligenceSave");
+    }
+
+    /**
+     * Retrieves wisdom saving throw bonus.
+     * @returns wisdom save
+     */
+    public wisdomSave(): number {
+        return this.wisdom() + (this.saves[4] ? this.proficiencyBonus : 0) + this.bonuses.bonus("wisdomSave");
+    }
+
+    /**
+     * Retrieves charisma saving throw bonus.
+     * @returns charisma save
+     */
+    public charismaSave(): number {
+        return this.charisma() + (this.saves[5] ? this.proficiencyBonus : 0) + this.bonuses.bonus("charismaSave");
+    }
+
+    // ===========================================================================
+
+    public getDamageResistance(key: string): number {
+        return this.damageResistances[key] + this.bonuses[key];
     }
 }

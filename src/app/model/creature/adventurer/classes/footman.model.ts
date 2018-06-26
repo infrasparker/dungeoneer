@@ -4,8 +4,8 @@ import { ConditionResistance } from "../../../mechanics/condition.model";
 import { AttackRoll, Buff } from "../../ability.model";
 import { Creature } from "../../creature.model";
 import { DiceRoll } from "../../../mechanics/roll.model";
-import { Armor } from "../../../mechanics/armor.model";
-import { Effect_ACBonus, Effect_AttackBonus } from "../../../mechanics/effect.model";
+import { Armor } from "../../../item/armor.model";
+import { Bonus } from "../../bonus.model";
 
 export class Footman extends Adventurer {
     constructor(name: string,
@@ -13,64 +13,28 @@ export class Footman extends Adventurer {
         level?: number
     ) {
         super(name, str, dex, con, int, wis, cha, level);
+    }
+
+    protected generateClassInformation(): void {
         this.className = "Footman";
         this.classDescription = "They like swords and shields, helmets and chestpieces, broccoli and beef";
-    }
-
-    public defendFromAttackRoll(roll: number): [boolean, string] {
-        let dodgeCap: number = 10 + this.acDexBonus();
-        if (roll < 8)
-            return [false, "The attack missed."];
-        else if (roll < dodgeCap)
-            return [false, this.name + "dodged the attack."];
-        else if (roll < this.ac() + this.acBonus)
-            return [false, this.name + "blocked the attack."];
-        else
-            return [true, "The attack landed."];
-    }
-
-    // public takeDamage(damages: [string, number][]): string {
-    //     let text: string = "";
-    //     damages.forEach(pair => {
-    //         let totalDamage: number = pair[1] - Math.floor(pair[1] * this.damageResistances[pair[0]]);
-    //         if (totalDamage < 0)
-    //             text += this.name + " heals for " + totalDamage + " hit points.";
-    //         else
-    //             if (this.blocking)
-    //                 totalDamage = Math.floor(totalDamage * .5);
-    //             text += this.name + " takes " + totalDamage + " points of " + pair[0] + " damage.";
-    //         this.changeHP(-totalDamage);
-    //     });
-    //     return text;
-    // }
-
-    public startTurn(): void {
-
-    }
-
-    public endTurn(): void {
-
     }
 
     protected generateHitDice(): void {
         this.hitDice = new DiceRoll(this.level, 10);
     }
 
-    protected generateSavingThrows(): void {
-        this.strengthSave = true;
-        this.dexteritySave = false;
-        this.constitutionSave = true;
-        this.intelligenceSave = false;
-        this.wisdomSave = false;
-        this.charismaSave = false;
+    protected generateArmor(): void {
+        this.ac_natural = 10;
+        this.armor = Armor.chain_shirt();
     }
 
-    protected generateArmor(): void {
-        this.armor = new Armor(3, 2, true);
+    protected generateSavingThrows(): void {
+        this.saves = [true, false, true, false, false, false];
     }
 
     protected generateAbilities(): void {
-        this.abilities = [new Slash(), new Hold(), new Charge(), new Rally()];
+        this.abilities = [new Slash(), new HoldFast(), new Charge(), new Rally()];
     }
 
     protected generateDamageResistances(): void {
@@ -90,17 +54,18 @@ class Slash extends AttackRoll {
         this.damageDice = new DiceRoll(1, 6);
     }
 
-    protected attackBonus(user: Footman): number {
-        return user.strength + user.proficiencyBonus + user.attackBonus;
+    protected attackBonus(user: Footman, target: Creature): number {
+        return user.strength() + user.proficiencyBonus + user.bonuses.bonus("attack");
     }
 
-    protected initiateAttackText(roll: number): string {
-        return name + " lashes out with their sword (" + roll + ").";
+    protected attackFlavor(user: Footman, target: Creature, roll: number): string {
+        return user.name + " lashes out at " + target.name + " with their sword (" + roll + ").";
     }
 
     protected applyEffect(user: Footman, target: Creature): string {
-        let damage: number = this.damageDice.roll() + user.strength;
-        return target.takeDamage([["laceration", damage]]);
+        let damage: number = this.damageDice.roll() + user.strength();
+        damage *= target.getDamageResistance("laceration");
+        return user.name + " slashes into " + target.name + " for " + damage + " laceration damage.";
     }
 
     public display(): string {
@@ -108,14 +73,14 @@ class Slash extends AttackRoll {
     }
 }
 
-class Hold extends Buff {
+class HoldFast extends Buff {
     constructor() {
-        super("Hold", "Live to fight another turn... maybe", false, true, false);
+        super("Hold Fast", "Live to fight another turn... maybe", false, true, false);
     }
 
-    public applyBuff(user: Footman, target: Footman): string {
-        (new Effect_ACBonus(5, 1)).apply(user);
-        return user.name + " puts forth their shield at the ready.";
+    public use(user: Footman, target: Footman): string {
+        user.bonuses.addBonus("ac", new Bonus(5, 1));
+        return user.name + " puts forth their shield.";
     }
 
     public display(): string {
@@ -131,23 +96,23 @@ class Charge extends AttackRoll {
         this.damageDice = new DiceRoll(1, 10);
     }
 
-    protected attackBonus(user: Footman): number {
-        return user.strength + user.proficiencyBonus + user.attackBonus;
+    protected attackBonus(user: Footman, target: Creature): number {
+        return user.strength() + user.proficiencyBonus + user.bonuses.bonus("attack");
     }
 
-    protected initiateAttackText(roll: number): string {
+    protected attackFlavor(user: Footman, target: Creature, roll: number): string {
         return name + " lunges forward with a wild swing (" + roll + ").";
     }
 
     protected applyEffect(user: Footman, target: Creature): string {
-        let damage: number = this.damageDice.roll() + user.strength;
-        (new Effect_ACBonus(3, 1)).apply(user);
-        (new Effect_ACBonus(3, 1)).apply(target);
-        return target.takeDamage([["laceration", damage]]);
+        let damage: number = this.damageDice.roll() + user.strength();
+        damage *= target.getDamageResistance("laceration");
+        user.bonuses.addBonus("ac", new Bonus(-2, 1));
+        return user.name + " charges into " + target.name + " and swings, cutting " + target.name + " for " + damage + " laceration damage.";
     }
 
     public display(): string {
-        return "Charge, dealing 1d10+STR laceration damage and lowering both your ACs by 3 for a turn.";
+        return "Charge, dealing 1d10+STR laceration damage and lowering your AC by 2 for a turn.";
     }
 }
 
@@ -156,8 +121,8 @@ class Rally extends Buff {
         super("Rally", "Invoke your inner bard", true, false, false);
     }
 
-    public applyBuff(user: Footman, target: Creature): string {
-        (new Effect_AttackBonus(5, 1)).apply(target);
+    public use(user: Footman, target: Creature): string {
+        target.bonuses.addBonus("attack", new Bonus(5, 1));
         return user.name + " calls out confidently to " + target.name + ".";
     }
 
