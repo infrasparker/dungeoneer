@@ -39,7 +39,7 @@ export abstract class Adventurer extends Creature {
     }
 
     protected implementRace(race: Race): void {
-
+        
     }
 
     protected abstract generateClassInformation(): void;
