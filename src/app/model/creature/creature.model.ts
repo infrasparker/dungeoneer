@@ -7,150 +7,75 @@ import { DiceRoll } from "../mechanics/roll.model";
 import { BonusContainer } from "./bonus.model";
 
 export abstract class Creature extends Stats {
-    // Information about the creature
-    public name: string; // Name of creature
-    public race: string; // Race of creature
-    public background: string; // Creature background
+    /**
+     * @public creature name
+     */
+    public abstract name: string;
 
-    // Hit points and hit dice
-    public hp: number; // Current hit points
-    public hp_max: number; // Maximum hit points
-    public hp_temp: number; // Temporary hit points
-    public hitDice: DiceRoll; // Hit dice used to calculate max hit points
+    public abstract hp: number; // Current hit points
+    protected abstract hp_rolls: number; // Hit points rolled from hit dice
+    public abstract hp_temp: number; // Temporary hit points
+    public abstract hitDice: DiceRoll; // Hit dice used to calculate max hit points
 
     // Armor class and armor
-    public ac_natural: number // Natural armor
-    public armor: Armor; // Armor, if wearing armor; undefined if not. May be broken down later?
+    public abstract ac_natural: number // Natural armor
+    public abstract armor: Armor; // Armor, if wearing armor; undefined if not. May be broken down later?
 
-    // Proficiency
-    public proficiencyBonus: number;
-    public proficiencies: string[];
+    // Proficiencies
+    public abstract proficiencies: string[];
 
     // Saving throws
-    public saves: [boolean, boolean, boolean, boolean, boolean, boolean]; // Saving throw array
+    public abstract saves: [boolean, boolean, boolean, boolean, boolean, boolean]; // Saving throw array
 
-    public abilities: [Ability, Ability, Ability, Ability]; // Can have up to 4 abilities
+    public abstract abilities: [Ability, Ability, Ability, Ability]; // Can have up to 4 abilities
 
-    public damageResistances: DamageResistance; // A JS object that contains damage type name keys mapped to resistance values from 0.0 to 1.0
+    public abstract damageResistances: DamageResistance; // A JS object that contains damage type name keys mapped to resistance values from 0.0 to 1.0
     
-    public conditionResistances: ConditionResistance; // A JS object that contains condition type name keys mapped to resistance values from 0.0 to 1.0
+    public abstract conditionResistances: ConditionResistance; // A JS object that contains condition type name keys mapped to resistance values from 0.0 to 1.0
 
-    public bonuses: BonusContainer;
-
-    constructor(
-        name: string,
-        str?: number, dex?: number, con?: number, int?: number, wis?: number, cha?: number
-    ) {
-        super(str, dex, con, int, wis, cha);
-        this.name = name;
-        this.generateHitDice();
-        this.generateHP();
-        this.generateArmor();
-        this.generateProficiency();
-        this.generateSavingThrows();
-        this.generateAbilities();
-        this.generateDamageResistances();
-        this.generateConditionResistances();
-        this.bonuses = new BonusContainer();
-    }
-
-
-
-    // ====================================================================
-    // Object initialization and generation methods
-    // ====================================================================
-
-    /**
-     * Generates creature hit dice. Varies based on what creature it is used to construct.
-     */
-    protected abstract generateHitDice(): void;
-
-    /**
-     * Generates hit points and hit point maximum using hit dice rolls and constitution modifier.
-     */
-    protected generateHP(): void {
-        this.hp_max = this.hitDice.roll() + this.hitDice.amount * this.constitution();
-        this.hp = this.hp_max;
-    }
-
-    /**
-     * Generates armor and armor class values depending on the creature, not including shields.
-     */
-    protected abstract generateArmor(): void;
-
-    protected abstract generateProficiency(): void;
-
-    /**
-     * Generates saving throw array.
-     */
-    protected abstract generateSavingThrows(): void;
-
-    /**
-     * Generates list of abilities that the creature can use, implemented by class
-     */
-    protected abstract generateAbilities(): void;
-
-    /**
-     * Generates JS object of resistances to damage by key: value pair
-     */
-    protected abstract generateDamageResistances(): void;
-
-    /**
-     * Generates JS object of resistances to conditions by key: value pair
-     */
-    protected abstract generateConditionResistances(): void;
+    public abstract bonuses: BonusContainer;
 
     // ===============================================================
     // Property retrieving methods
     // ===============================================================
 
+    public abstract proficiencyBonus(): number;
+
     /**
-     * Getter for calculated strength mod. Should be overriden.
+     * Getter for calculated strength mod.
      * @returns total strength mod
      */
-    public strength(): number {
-        return this.baseStrength();
-    }
+    public abstract strengthMod(): number;
 
     /**
-     * Getter for calculated dexterity mod. Should be overriden.
+     * Getter for calculated dexterity mod.
      * @returns total dexterity mod
      */
-    public dexterity(): number {
-        return this.baseDexterity();
-    }
+    public abstract dexterityMod(): number;
 
     /**
-     * Getter for calculated constitution mod. Should be overriden.
+     * Getter for calculated constitution mod.
      * @returns total constitution mod
      */
-    public constitution(): number {
-        return this.baseConstitution();
-    }
+    public abstract constitutionMod(): number;
 
     /**
-     * Getter for calculated intelligence mod. Should be overriden.
+     * Getter for calculated intelligence mod.
      * @returns total intelligence mod
      */
-    public intelligence(): number {
-        return this.baseIntelligence();
-    }
+    public abstract intelligenceMod(): number;
 
     /**
-     * Getter for calculated wisdom mod. Should be overriden.
+     * Getter for calculated wisdom mod.
      * @returns total wisdom mod
      */
-    public wisdom(): number {
-        return this.baseWisdom();
-    }
+    public abstract wisdomMod(): number;
 
     /**
-     * Getter for calculated charisma mod. Should be overriden.
+     * Getter for calculated charisma mod.
      * @returns total charisma mod
      */
-    public charisma(): number {
-        return this.baseCharisma();
-    }
+    public abstract charismaMod(): number
 
     // ===================================================================================
 
@@ -159,7 +84,7 @@ export abstract class Creature extends Stats {
      * @returns max hit points
      */
     public maxHP(): number {
-        return this.hp_max + this.bonuses.bonus("hp_max");
+        return this.hp_rolls + this.hitDice.amount * this.constitutionMod() + BonusContainer.total(this.bonuses.maxHP);
     }
 
     /**
@@ -167,7 +92,11 @@ export abstract class Creature extends Stats {
      * @returns The AC bonus.
      */
     public ac_dexBonus(): number {
-        return (this.armor.maxDex === -1) ? this.dexterity() : Math.min(this.armor.maxDex, this.dexterity());
+        if (this.armor) {
+            if (this.armor.maxDex !== -1)
+                return Math.min(this.armor.maxDex, this.dexterityMod());
+        }
+        return this.dexterityMod();
     }
 
     /**
@@ -175,8 +104,8 @@ export abstract class Creature extends Stats {
      * Used to choose between blocking, dodging, or missing flavor text.
      * @returns dodge AC
      */
-    public dexAC(): number {
-        return 10 + this.ac_dexBonus();
+    public dodgeAC(): number {
+        return 10 + this.ac_dexBonus() + BonusContainer.total(this.bonuses.dodgeAC);
     }
 
     /**
@@ -184,7 +113,8 @@ export abstract class Creature extends Stats {
      * @returns AC
      */
     public blockAC(): number {
-        return Math.max(this.ac_natural + this.dexterity(), this.armor.ac + this.ac_dexBonus()) + this.bonuses.bonus("ac");
+        return Math.max(this.ac_natural + this.dexterityMod(), this.armor.ac + this.ac_dexBonus()) +
+            BonusContainer.total(this.bonuses.dodgeAC) + BonusContainer.total(this.bonuses.blockAC);
     }
 
     // =================================================================================
@@ -194,7 +124,7 @@ export abstract class Creature extends Stats {
      * @returns strength save
      */
     public strengthSave(): number {
-        return this.strength() + (this.saves[0] ? this.proficiencyBonus : 0) + this.bonuses.bonus("strengthSave");
+        return this.strengthMod() + (this.saves[0] ? this.proficiencyBonus() : 0) + BonusContainer.total(this.bonuses.strengthSave);
     }
 
     /**
@@ -202,7 +132,7 @@ export abstract class Creature extends Stats {
      * @returns dexterity save
      */
     public dexteritySave(): number {
-        return this.dexterity() + (this.saves[1] ? this.proficiencyBonus : 0) + this.bonuses.bonus("dexteritySave");
+        return this.dexterityMod() + (this.saves[1] ? this.proficiencyBonus() : 0) + BonusContainer.total(this.bonuses.dexteritySave);
     }
 
     /**
@@ -210,7 +140,7 @@ export abstract class Creature extends Stats {
      * @returns constitution save
      */
     public constitutionSave(): number {
-        return this.constitution() + (this.saves[2] ? this.proficiencyBonus : 0) + this.bonuses.bonus("constitutionSave");
+        return this.constitutionMod() + (this.saves[2] ? this.proficiencyBonus() : 0) + BonusContainer.total(this.bonuses.constitutionSave);
     }
 
     /**
@@ -218,7 +148,7 @@ export abstract class Creature extends Stats {
      * @returns intelligence save
      */
     public intelligenceSave(): number {
-        return this.intelligence() + (this.saves[3] ? this.proficiencyBonus : 0) + this.bonuses.bonus("intelligenceSave");
+        return this.intelligenceMod() + (this.saves[3] ? this.proficiencyBonus() : 0) + BonusContainer.total(this.bonuses.intelligenceSave);
     }
 
     /**
@@ -226,7 +156,7 @@ export abstract class Creature extends Stats {
      * @returns wisdom save
      */
     public wisdomSave(): number {
-        return this.wisdom() + (this.saves[4] ? this.proficiencyBonus : 0) + this.bonuses.bonus("wisdomSave");
+        return this.wisdomMod() + (this.saves[4] ? this.proficiencyBonus() : 0) + BonusContainer.total(this.bonuses.wisdomSave);
     }
 
     /**
@@ -234,7 +164,7 @@ export abstract class Creature extends Stats {
      * @returns charisma save
      */
     public charismaSave(): number {
-        return this.charisma() + (this.saves[5] ? this.proficiencyBonus : 0) + this.bonuses.bonus("charismaSave");
+        return this.charismaMod() + (this.saves[5] ? this.proficiencyBonus() : 0) + BonusContainer.total(this.bonuses.charismaSave);
     }
 
     // ===========================================================================

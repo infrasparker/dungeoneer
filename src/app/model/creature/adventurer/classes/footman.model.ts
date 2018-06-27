@@ -1,48 +1,58 @@
 import { Adventurer } from "../adventurer.model";
 import { DamageResistance } from "../../../mechanics/damage.model";
 import { ConditionResistance } from "../../../mechanics/condition.model";
-import { AttackRoll, Buff } from "../../ability.model";
+import { AttackRoll, Buff, Ability } from "../../ability.model";
 import { Creature } from "../../creature.model";
 import { DiceRoll } from "../../../mechanics/roll.model";
 import { Armor } from "../../../item/armor.model";
-import { Bonus } from "../../bonus.model";
+import { Bonus, BonusContainer } from "../../bonus.model";
 
 export class Footman extends Adventurer {
-    constructor(name: string,
-        str?: number, dex?: number, con?: number, int?: number, wis?: number, cha?: number,
-        level?: number
-    ) {
-        super(name, str, dex, con, int, wis, cha, level);
-    }
+    public hp: number;
+    protected hp_rolls: number;
+    public hp_temp: number;
+    public hitDice: DiceRoll;
 
-    protected generateClassInformation(): void {
+    public ac_natural: number;
+    public armor: Armor;
+
+    public saves: [boolean, boolean, boolean, boolean, boolean, boolean];
+
+    public abilities: [Ability, Ability, Ability, Ability];
+
+    public damageResistances: DamageResistance;
+    public conditionResistances: ConditionResistance;
+
+    public proficiencies: string[];
+
+    public bonuses: BonusContainer;
+
+    public className: string;
+    public classDescription: string;
+
+    constructor() {
+        super();
         this.className = "Footman";
         this.classDescription = "They like swords and shields, helmets and chestpieces, broccoli and beef";
-    }
 
-    protected generateHitDice(): void {
         this.hitDice = new DiceRoll(this.level, 10);
-    }
+        this.hp_rolls = this.hitDice.roll();
+        this.hp = this.maxHP();
+        this.hp_temp = 0;
 
-    protected generateArmor(): void {
         this.ac_natural = 10;
-        this.armor = Armor.chain_shirt();
-    }
+        this.armor = Armor.chain_mail();
 
-    protected generateSavingThrows(): void {
         this.saves = [true, false, true, false, false, false];
-    }
-
-    protected generateAbilities(): void {
+        
         this.abilities = [new Slash(), new HoldFast(), new Charge(), new Rally()];
-    }
-
-    protected generateDamageResistances(): void {
+        
         this.damageResistances = DamageResistance.generateDefaultDamageResistances();
-    }
-
-    protected generateConditionResistances(): void {
         this.conditionResistances = ConditionResistance.generateDefaultConditionResistances();
+
+        this.proficiencies = [];
+
+        this.bonuses = new BonusContainer();
     }
 }
 
@@ -55,7 +65,7 @@ class Slash extends AttackRoll {
     }
 
     protected attackBonus(user: Footman, target: Creature): number {
-        return user.strength() + user.proficiencyBonus + user.bonuses.bonus("attack");
+        return user.strengthMod() + user.proficiencyBonus() + BonusContainer.total(user.bonuses.attack);
     }
 
     protected attackFlavor(user: Footman, target: Creature, roll: number): string {
@@ -63,7 +73,7 @@ class Slash extends AttackRoll {
     }
 
     protected applyEffect(user: Footman, target: Creature): string {
-        let damage: number = this.damageDice.roll() + user.strength();
+        let damage: number = this.damageDice.roll() + user.strengthMod();
         damage *= target.getDamageResistance("laceration");
         return user.name + " slashes into " + target.name + " for " + damage + " laceration damage.";
     }
@@ -97,7 +107,7 @@ class Charge extends AttackRoll {
     }
 
     protected attackBonus(user: Footman, target: Creature): number {
-        return user.strength() + user.proficiencyBonus + user.bonuses.bonus("attack");
+        return user.strengthMod() + user.proficiencyBonus() + BonusContainer.total(user.bonuses.attack);
     }
 
     protected attackFlavor(user: Footman, target: Creature, roll: number): string {
@@ -105,7 +115,7 @@ class Charge extends AttackRoll {
     }
 
     protected applyEffect(user: Footman, target: Creature): string {
-        let damage: number = this.damageDice.roll() + user.strength();
+        let damage: number = this.damageDice.roll() + user.strengthMod();
         damage *= target.getDamageResistance("laceration");
         user.bonuses.addBonus("ac", new Bonus(-2, 1));
         return user.name + " charges into " + target.name + " and swings, cutting " + target.name + " for " + damage + " laceration damage.";

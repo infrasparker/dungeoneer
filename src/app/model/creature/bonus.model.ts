@@ -40,10 +40,11 @@ export class BonusContainer {
     public charismaSave:        Bonus[];
 
     // Hit Points
-    public hp_max:              Bonus[];
+    public maxHP:               Bonus[];
 
     // Armor Class
-    public ac:                  Bonus[];
+    public dodgeAC:             Bonus[];
+    public blockAC:             Bonus[];
 
     // Offensive
     public attack:              Bonus[];
@@ -66,9 +67,9 @@ export class BonusContainer {
         this[key].push(bonus);
     }
 
-    public bonus(key: string) {
+    public static total(arr: Bonus[]): number {
         let sum = 0;
-        this[key].forEach((bonus: Bonus) => {
+        arr.forEach((bonus: Bonus) => {
             sum += bonus.value;
         });
         return sum;

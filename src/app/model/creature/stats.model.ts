@@ -1,80 +1,64 @@
 export abstract class Stats {
-    private baseStats: [number, number, number, number, number, number];
 
     /**
-     * Creates the Stat object using modifiers for all 6 standard stats, usually from -5 to +5.
-     * @param strength      STR mod
-     * @param dexterity     DEX mod
-     * @param constitution  CON mod
-     * @param intelligence  INT mod
-     * @param wisdom        WIS mod
-     * @param charisma      CHA mod
+     * @protected Tuple for stat container indexed from 0-5; ordered STR, DEX, CON, INT, WIS, CHA
      */
-    constructor(
-    strength:        number = 0,
-    dexterity:       number = 0,
-    constitution:    number = 0,
-    intelligence:    number = 0,
-    wisdom:          number = 0,
-    charisma:        number = 0,
-    ) {
-        this.baseStats = [strength, dexterity, constitution, intelligence, wisdom, charisma];
-    }
+    protected abstract baseStats: [number, number, number, number, number, number];
 
     /**
      * Physical power.
-     * @returns strength mod
+     * @returns strength score
      */
-    public baseStrength(): number {
+    protected baseStrengthScore(): number {
         return this.baseStats[0];
     }
 
     /**
      * Finesse and precision.
-     * @returns dexterity mod
+     * @returns dexterity score
      */
-    public baseDexterity(): number {
+    protected baseDexterityScore(): number {
         return this.baseStats[1];
     }
 
     /**
      * Endurance and vitality.
-     * @returns constitution mod
+     * @returns constitution score
      */
-    public baseConstitution(): number {
+    protected baseConstitutionScore(): number {
         return this.baseStats[2];
     }
 
     /**
      * Mental capability, memory, and learning.
-     * @returns intelligence mod
+     * @returns intelligence score
      */
-    public baseIntelligence(): number {
+    protected baseIntelligenceScore(): number {
         return this.baseStats[3];
     }
 
     /**
      * Instinct and awareness.
-     * @returns wisdom mod
+     * @returns wisdom score
      */
-    public baseWisdom(): number {
+    protected baseWisdomScore(): number {
         return this.baseStats[4];
     }
 
     /**
      * Appearance, personality, and amiability.
-     * @returns charisma mod
+     * @returns charisma score
      */
-    public baseCharisma(): number {
+    protected baseCharismaScore(): number {
         return this.baseStats[5];
     }
 
     /**
      * Vestigial support for old D&D stat system
      * @param score stat score from old system
-     * @returns stat mod for updated system
+     * @returns stat mod
      */
-    public static convertObsolete(score: number): number {
+    protected static scoreToMod(score: number): number {
         return Math.floor((score - 10) / 2);
     }
 }
