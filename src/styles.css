@@ -1,9 +1,0 @@
-/* You can add global styles to this file, and also import other style files */
-/* @import "~@angular/material/prebuilt-themes/purple-green.css"; */
-
-html, body, app-root, .app-frame, app-tab-menu, mat-tab-group, .mat-tab-body-wrapper {
-    overflow: hidden;
-    margin: 0;
-    height: 100%;
-    box-sizing: border-box;
-}
